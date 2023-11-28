@@ -1,10 +1,14 @@
 package com.obsessionmediagroup.obsessionnews
 
 import android.annotation.SuppressLint
-import androidx.appcompat.app.AppCompatActivity
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.os.Bundle
+import android.webkit.URLUtil
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsCompat
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -21,7 +25,7 @@ class MainActivity : AppCompatActivity() {
 
         // WebViewClient allows you to handle
         // onPageFinished and override Url loading.
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = MyWebViewClient()
 
         // this will load the url of the website
         webView.loadUrl(WEB_URL)
@@ -31,6 +35,36 @@ class MainActivity : AppCompatActivity() {
 
         // if you want to enable zoom feature
         webView.settings.setSupportZoom(true)
+    }
+
+    inner class MyWebViewClient : WebViewClient() {
+        @Deprecated("Deprecated in Java")
+        override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+            if (URLUtil.isNetworkUrl(url)) {
+                return false
+            } else if (url != null) {
+                if (url.startsWith(prefix = "whatsapp:") || url.startsWith(prefix = "mailto:")) {
+                    try {
+                        val sendIntent = Intent().apply {
+                            this.action = Intent.ACTION_SEND
+                            this.putExtra(Intent.EXTRA_TEXT, url)
+                            this.type = "text/plain"
+                        }
+                        startActivity(sendIntent)
+                        Toast.makeText(this@MainActivity, "Mengirim berita", Toast.LENGTH_SHORT)
+                            .show()
+                    } catch (e: ActivityNotFoundException) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Aplikasi belum terpasang",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    return true
+                }
+            }
+            return super.shouldOverrideUrlLoading(view, url)
+        }
     }
 
     @Deprecated("Deprecated in Java")
